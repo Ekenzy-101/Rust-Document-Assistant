@@ -1,0 +1,42 @@
+[package]
+name = "kenzy-docs"
+version = "1.0.0"
+description = "Kenzy Docs - Desktop Application"
+authors = ["you"]
+license = "MIT"
+repository = ""
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = [] }
+tauri-plugin-shell = "2.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres"] }
+# Langchain and AI
+langchain-rust = { version = "=4.6.0", features = ["postgres"] }
+
+# Document processing
+pdf-extract = "0.7"
+docx-rs = "0.4.18"
+encoding_rs = "0.8"
+
+# Utilities
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+anyhow = "1.0"
+thiserror = "1.0"
+dotenv = "0.15"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+base64 = "0.22"
+bytes = "1.7"
+lazy_static = "1.5"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
