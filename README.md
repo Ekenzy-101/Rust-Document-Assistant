@@ -18,7 +18,7 @@ The app converts documents into a **semantic knowledge base** and enables:
 - Document summarization
 - Information extraction
 
----
+## <img src="screenshot.png" alt="Screenshot" />
 
 ## 🎯 Problem
 

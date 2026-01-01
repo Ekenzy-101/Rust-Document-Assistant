@@ -4,27 +4,25 @@ use std::sync::Arc;
 use crate::core::*;
 use crate::models::*;
 use chrono::SecondsFormat;
-use langchain_rust::fmt_message;
-use langchain_rust::fmt_template;
-use langchain_rust::llm::OpenAIConfig;
-use langchain_rust::schemas::MessageType;
-use langchain_rust::schemas::Retriever as IRetriever;
 // use langchain_rust::text_splitter::{SplitterOptions, TextSplitter, TokenSplitter};
 use anyhow::Result;
 use chrono::Utc;
-use langchain_rust::vectorstore::VectorStore;
 use langchain_rust::{
     add_documents,
     chain::{Chain, ConversationalRetrieverChainBuilder},
-    llm::openai::OpenAI,
+    fmt_message, fmt_template,
+    llm::{openai::OpenAI, OpenAIConfig},
     memory::SimpleMemory,
     message_formatter,
     prompt::HumanMessagePromptTemplate,
     prompt_args,
+    schemas::BaseMemory,
     schemas::Document,
     schemas::Message,
-    similarity_search, template_jinja2,
-    vectorstore::Retriever,
+    schemas::MessageType,
+    schemas::Retriever as IRetriever,
+    similarity_search, template_fstring,
+    vectorstore::{Retriever, VectorStore},
 };
 use serde_json::{json, Value};
 use uuid::Uuid;
@@ -164,31 +162,35 @@ pub async fn chat_with_documents(
     let prompt = message_formatter![
                     fmt_message!(Message::new_system_message("You are a helpful assistant")),
                     fmt_template!(HumanMessagePromptTemplate::new(
-                    template_jinja2!("
-The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its history.
+                    template_fstring!("
+The following is a friendly conversation between a Human and an AI. The AI is talkative and provides lots of specific details from its history.
 
 Current conversation:
-{{ history }}
-human: {{ message }}
-ai:
-", "message","history"
-)))];
+Human: {question}
+AI:
+", "question")))];
+
+    // Initialize memory with conversation history
+    let mut memory = SimpleMemory::new();
+    for msg in &history {
+        let message = Message {
+            content: msg.content.clone(),
+            message_type: msg.role.clone(),
+            ..Default::default()
+        };
+        memory.add_message(message);
+    }
+
     let chain = ConversationalRetrieverChainBuilder::new()
         .llm(llm)
-        .rephrase_question(true)
-        .memory(SimpleMemory::new().into())
+        .memory(memory.into())
         .retriever(retriever)
         .prompt(prompt)
         .build()
-        .map_err(|e| format!("Failed to initialize chain: {}", e))?;
+        .map_err(|e| format!("Failed to build chain: {}", e))?;
 
-    let history = history
-        .iter()
-        .map(|msg| format!("{}: {}\n", msg.role.to_string(), msg.content))
-        .collect::<String>();
     let input_variables = prompt_args! {
-        "history" => history,
-        "message" => message,
+        "question" => message.as_str(),
     };
     let content = chain
         .invoke(input_variables)

@@ -16,10 +16,10 @@ export const HomePage: React.FC = () => {
     setRefreshKey((prev) => prev + 1);
   };
 
-  if (!isRunning) {
+  if (!isRunning && error) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
-        <Alert severity="warning">{error}</Alert>
+        <Alert severity="error">{error}</Alert>
       </Container>
     );
   }
